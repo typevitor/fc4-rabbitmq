@@ -14,7 +14,10 @@ async function consumer() {
   channel.consume(queue, (msg) => {
     if (msg !== null) {
       const messageContent = msg.content.toString();
-      console.log("Received message:", messageContent);
+      const obj = JSON.parse(messageContent);
+      const contentType = msg.properties.contentType;
+      console.log("Received message:", obj);
+      console.log("Content Type:", contentType);
       channel.ack(msg); // Acknowledge the message
     }
   });

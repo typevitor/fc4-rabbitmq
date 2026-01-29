@@ -6,12 +6,14 @@ async function producer() {
   const channel = await connection.createChannel();
 
   const queue = "task_queue";
-  const message = "Hello World!";
+  const message = { id: 1, content: "Hello, World!" };
 
   await channel.assertQueue(queue); // Create the queue if it doesn't exist
-  channel.sendToQueue(queue, Buffer.from(message));
+  channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)));
 
-  console.log(`Sent message: ${message}`);
+  console.log(`Sent message: ${JSON.stringify(message)}`, {
+    contentType: "application/json",
+  });
 
   setTimeout(() => {
     connection.close(); //close the channels automatically
