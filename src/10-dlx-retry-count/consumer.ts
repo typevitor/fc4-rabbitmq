@@ -12,10 +12,13 @@ async function deadLetterExchange() {
   });
   await channel.bindQueue(queue, "amq.direct", "order");
   await channel.assertQueue("fail.queue");
-  //DLX
+
   await channel.assertExchange("dlx.exchange", "direct");
-  await channel.assertQueue("dlx.queue");
-  await channel.bindQueue("dlx.queue", "dlx.exchange", "order");
+  await channel.assertQueue("retry.queue", {
+    messageTtl: 5000,
+    deadLetterExchange: "amq.direct",
+  });
+  await channel.bindQueue("retry.queue", "dlx.exchange", "order");
 
   console.log(`[*] Waiting for messages in ${queue}. To exit press CTRL+C`);
 
@@ -57,7 +60,7 @@ async function deadLetterExchange() {
         //@ts-expect-error
         console.error("[!] Processing error:", error.message);
 
-        channel.nack(msg, false, true); //channel.reject(msg, true);
+        channel.nack(msg, false, false); //channel.reject(msg, true);
       }
       //}, 10000);
     },
