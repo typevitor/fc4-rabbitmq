@@ -11,6 +11,7 @@ async function deadLetterExchange() {
     deadLetterExchange: "dlx.exchange",
   });
   await channel.bindQueue(queue, "amq.direct", "order");
+
   await channel.assertQueue("fail.queue");
 
   await channel.assertExchange("dlx.exchange", "direct");
@@ -57,10 +58,30 @@ async function deadLetterExchange() {
         channel.ack(msg, true);
       } catch (error) {
         //se aconteceu um erro não reprocessável, publicar na fila de falha.
+
+        const maxRetries = 3;
+        const xDeath = msg.properties.headers?.["x-death"] || [];
+        const retryCount = xDeath[0]?.count || 0;
+        if (retryCount < maxRetries) {
+          channel.nack(msg, false, false); //channel.reject(msg, true);
+          console.error(
+            `[!] Processing error, retrying (${retryCount + 1}/${maxRetries})...`,
+          );
+          return;
+        }
+
+        //@ts-expect-error
+        const newMsg = { error: error.message, payload: content };
+        channel.sendToQueue("fail.queue", Buffer.from(JSON.stringify(newMsg)));
+        console.log(
+          "Sending message to fail.queue after max retries reached:",
+          newMsg,
+        );
+
+        channel.ack(msg); //ack para remover da fila de retry, já que enviamos para a fila de falha.
+
         //@ts-expect-error
         console.error("[!] Processing error:", error.message);
-
-        channel.nack(msg, false, false); //channel.reject(msg, true);
       }
       //}, 10000);
     },
