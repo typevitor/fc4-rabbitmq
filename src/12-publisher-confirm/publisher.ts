@@ -11,8 +11,8 @@ type Order = {
 };
 
 export async function publishOrder() {
-  const connection = await amqp.connect("amqp://admin:password@localhost:5672");
-  const channel = await connection.createChannel();
+  const connection = await amqp.connect("amqp://user:password@localhost:5672");
+  const channel = await connection.createConfirmChannel();
 
   await channel.assertExchange(EXCHANGE_NAME, "direct", { durable: true });
 
@@ -27,16 +27,39 @@ export async function publishOrder() {
     createdAt: new Date(),
   };
 
+  channel.on("return", (msg) => {
+    /**
+     * fields: {
+      replyCode: 312,
+      replyText: 'NO_ROUTE',
+      exchange: 'amq.direct',
+      routingKey: 'order.created'
+    },
+    **/
+    // The 'return' event is emitted when a message is published with the 'mandatory' flag set to true, but the message cannot be routed to any queue. This can happen if there are no queues bound to the exchange with the specified routing key.
+    console.error("Message was returned:", msg);
+  });
+
+  //isPublished will be true if the message was sent to the broker, but it doesn't guarantee that it was received by the broker. To ensure that the message was received, we can use the confirm channel.
   const isPublished = channel.publish(
     EXCHANGE_NAME,
     "order.created",
     Buffer.from(JSON.stringify(order)),
     {
       persistent: true,
+      mandatory: true,
+    },
+    (err, ok) => {
+      if (err) {
+        console.error("Message was not published:", err);
+      } else {
+        console.log("Message was published successfully.", ok);
+      }
     },
   );
 
-  //isPublished will be true if the message was sent to the broker, but it doesn't guarantee that it was received by the broker. To ensure that the message was received, we can use the confirm channel.
+  // Wait for the confirmation that the message was received by the broker
+  await channel.waitForConfirms();
 
   console.log(`Order published: ${JSON.stringify(order)}`);
 
