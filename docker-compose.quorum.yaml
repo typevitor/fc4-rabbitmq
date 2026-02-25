@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/home/node/app
-  
+
   rabbitmq-node1:
-    image: rabbitmq:4.1.0-management
+    image: rabbitmq:4.2.3-management
     hostname: rabbitmq-node1
     ports:
       - 5672:5672
@@ -27,7 +27,7 @@ services:
       start_period: 10s
 
   rabbitmq-node2:
-    image: rabbitmq:4.1.0-management
+    image: rabbitmq:4.2.3-management
     hostname: rabbitmq-node2
     profiles:
       - follower
@@ -44,9 +44,9 @@ services:
     depends_on:
       rabbitmq-node1:
         condition: service_healthy
-  
+
   rabbitmq-node3:
-    image: rabbitmq:4.1.0-management
+    image: rabbitmq:4.2.3-management
     hostname: rabbitmq-node3
     profiles:
       - follower
@@ -63,7 +63,6 @@ services:
     depends_on:
       rabbitmq-node1:
         condition: service_healthy
-
 # para rodar somente um nó, use o comando:
 # docker-compose -f docker-compose.quorum.yaml up -d
 # para rodar todos os nós, use o comando:
