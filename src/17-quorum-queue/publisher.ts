@@ -2,7 +2,7 @@ import amqp from "amqplib";
 
 async function publish() {
   const conn = await amqp.connect("amqp://admin:admin@rabbitmq-node1:5672");
-  const channel = await conn.createChannel();
+  const channel = await conn.createConfirmChannel();
 
   const exchange = "amq.direct";
   await channel.assertExchange(exchange, "direct", { durable: true });
@@ -43,14 +43,24 @@ async function publish() {
     },
   }));
 
+  channel.on("return", (msg) => {
+    console.log("Mensagem retornada:", msg.content.toString());
+  });
+
   for (const msg of messages) {
-    channel.sendToQueue("queue1.test", Buffer.from(JSON.stringify(msg)));
-    channel.sendToQueue("queue2.test", Buffer.from(JSON.stringify(msg)));
+    channel.sendToQueue("queue1.test", Buffer.from(JSON.stringify(msg)), {
+      mandatory: true,
+    });
+    channel.sendToQueue("queue2.test", Buffer.from(JSON.stringify(msg)), {
+      mandatory: true,
+    });
   }
+
+  await channel.waitForConfirms();
 
   setTimeout(() => {
     conn.close();
-  }, 1000);
+  }, 400);
 }
 
 publish();
