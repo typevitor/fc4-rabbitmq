@@ -45,6 +45,9 @@ services:
       - RABBITMQ_FEATURE_FLAGS=+khepri_db
     volumes:
       - ./.docker/rabbitmq/rabbitmq-streams.conf:/etc/rabbitmq/conf.d/rabbitmq-streams.conf
+    depends_on:
+      rabbitmq-node1:
+        condition: service_healthy
 
   rabbitmq-node3:
     build:
@@ -64,3 +67,6 @@ services:
       - RABBITMQ_FEATURE_FLAGS=+khepri_db
     volumes:
       - ./.docker/rabbitmq/rabbitmq-streams.conf:/etc/rabbitmq/conf.d/rabbitmq-streams.conf
+    depends_on:
+      rabbitmq-node1:
+        condition: service_healthy
