@@ -5,7 +5,8 @@ package org.example;
 
 import com.rabbitmq.stream.*;
 
-public class ConsumerApplication {
+public class ConsumerAutoTrackingApplication {
+
     public static void main(String[] args) {
         Environment environment = Environment
                 .builder()
@@ -18,8 +19,9 @@ public class ConsumerApplication {
 
         // consumer - modelo pull
         Consumer consumer = environment.consumerBuilder()
+                .stream("test-stream") // É trabalho do consumidor guardar o offset para
+                .name("consumer-auto-tracking")
                 .offset(OffsetSpecification.first())
-                // .stream("test-stream") //É trabalho do consumidor guardar o offset para
                 // indicar a partir de onde ele quer consumir as mensagens
                 .messageHandler((offset, message) -> {
                     System.out.println("Received message: " + new String(message.getBodyAsBinary()));
@@ -36,7 +38,5 @@ public class ConsumerApplication {
                 e.printStackTrace();
             }
         }));
-
-        System.out.println("Message sent to RabbitMQ Stream!");
     }
 }
