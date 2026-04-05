@@ -23,18 +23,24 @@ public class ConsumerManualTrackingApplication {
         // consumer - modelo pull
         Consumer consumer = environment.consumerBuilder()
                 .stream("test-stream")
-                .noTrackingStrategy()
-                .subscriptionListener(subscription -> {
-                    // long offset = getOffsetFromDatabase("consumer-manual-tracking"); // Recupera
-                    // o offset do banco de dados
+                .manualTrackingStrategy()
+                .builder()
+                // .noTrackingStrategy()
+                // .subscriptionListener(subscription -> {
+                // // long offset = getOffsetFromDatabase("consumer-manual-tracking"); //
+                // Recupera
+                // // o offset do banco de dados
 
-                    // se não tiver offset, usar OffsetSpecification.first() ou
-                    // OffsetSpecification.last()
+                // // subscription.offsetSpecification().getOffset(); // offset atual do
+                // consumidor
 
-                    // subscription.offsetSpecification(OffsetSpecification.offset(offset));
-                    // Define o offset para o
-                    // consumidor
-                })
+                // // se não tiver offset, usar OffsetSpecification.first() ou
+                // // OffsetSpecification.last()
+
+                // // subscription.offsetSpecification(OffsetSpecification.offset(offset));
+                // // Define o offset para o
+                // // consumidor
+                // })
                 .name("consumer-auto-tracking")
                 .messageHandler((offset, message) -> {
                     System.out.println("Received message: " + new String(message.getBodyAsBinary()));
@@ -45,6 +51,13 @@ public class ConsumerManualTrackingApplication {
                     // storeMyDatabase("consumer-manual-tracking", offset.offset()); // Armazena o
                     // offset no banco de dados
                     // }
+
+                    if (offset.offset() % 2 == 0) { // Exemplo: armazena o offset a cada 10 mensagens
+                        System.out.println("Storing offset: " + offset.offset());
+                        // storeMyDatabase("consumer-manual-tracking", offset.offset()); // Armazena o
+                        // offset no banco de dados
+                        offset.storeOffset();
+                    }
 
                 })
                 .build();
