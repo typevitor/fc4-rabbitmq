@@ -5,7 +5,7 @@ package org.example;
 
 import com.rabbitmq.stream.*;
 
-public class ConsumerAutoTrackingApplication {
+public class ConsumerManualTrackingApplication {
 
     public static void main(String[] args) {
         Environment environment = Environment
@@ -17,18 +17,35 @@ public class ConsumerAutoTrackingApplication {
                 .stream("test-stream")
                 .create();
 
+        // 1. Controle manual sem o rabbitmq. Db cache, arquivo...
+        // 2. Control manual COM o Rabbitmq
+
         // consumer - modelo pull
         Consumer consumer = environment.consumerBuilder()
-                .stream("test-stream") // É trabalho do consumidor guardar o offset para
+                .stream("test-stream")
+                .noTrackingStrategy()
+                .subscriptionListener(subscription -> {
+                    // long offset = getOffsetFromDatabase("consumer-manual-tracking"); // Recupera
+                    // o offset do banco de dados
+
+                    // se não tiver offset, usar OffsetSpecification.first() ou
+                    // OffsetSpecification.last()
+
+                    // subscription.offsetSpecification(OffsetSpecification.offset(offset));
+                    // Define o offset para o
+                    // consumidor
+                })
                 .name("consumer-auto-tracking")
-                // .autoTrackingStrategy().flushInterval(Duration.ofSeconds(60)).messageCountBeforeStorage(10000)
-                // valor default // por numero de mensagens definidas
-                // ou por tempo
-                .offset(OffsetSpecification.first())
-                // indicar a partir de onde ele quer consumir as mensagens
                 .messageHandler((offset, message) -> {
                     System.out.println("Received message: " + new String(message.getBodyAsBinary()));
                     System.out.println("Message offset: " + offset.offset());
+
+                    // if (contition) {
+                    // condicoes = numero de offsets lidos, evento específico, etc
+                    // storeMyDatabase("consumer-manual-tracking", offset.offset()); // Armazena o
+                    // offset no banco de dados
+                    // }
+
                 })
                 .build();
 
