@@ -3,6 +3,8 @@
  */
 package org.example;
 
+import java.time.Duration;
+
 import com.rabbitmq.stream.*;
 
 public class ConsumerAutoTrackingApplication {
@@ -21,7 +23,11 @@ public class ConsumerAutoTrackingApplication {
         Consumer consumer = environment.consumerBuilder()
                 .stream("test-stream") // É trabalho do consumidor guardar o offset para
                 .name("consumer-auto-tracking")
-                // .autoTrackingStrategy().flushInterval(Duration.ofSeconds(60)).messageCountBeforeStorage(10000)
+                .singleActiveConsumer()
+                .autoTrackingStrategy()
+                .flushInterval(Duration.ofSeconds(60))
+                .messageCountBeforeStorage(100)
+                .builder()
                 // valor default // por numero de mensagens definidas
                 // ou por tempo
                 .offset(OffsetSpecification.first())
