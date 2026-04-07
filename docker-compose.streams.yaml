@@ -47,7 +47,7 @@ services:
       - ./.docker/rabbitmq/rabbitmq-streams.conf:/etc/rabbitmq/conf.d/rabbitmq-streams.conf
     depends_on:
       rabbitmq-node1:
-        condition: service_healthy
+        condition: service_started
 
   rabbitmq-node3:
     build:
@@ -69,4 +69,4 @@ services:
       - ./.docker/rabbitmq/rabbitmq-streams.conf:/etc/rabbitmq/conf.d/rabbitmq-streams.conf
     depends_on:
       rabbitmq-node1:
-        condition: service_healthy
+        condition: service_started
