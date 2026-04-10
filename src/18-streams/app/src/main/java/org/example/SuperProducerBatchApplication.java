@@ -36,7 +36,7 @@ public class SuperProducerBatchApplication {
                         case 1 -> "b";
                         case 2 -> "c";
                         default -> "a";
-                    };
+                    }; // util para determinar ordenacao de mensagens com mesma chave (ex: accountId)
                     System.out.println("Routing message with ID: " + message.getProperties().getMessageIdAsString()
                             + " to routing key: " + routingKey);
                     return routingKey;
