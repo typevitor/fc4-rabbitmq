@@ -21,17 +21,32 @@ public class SuperProducerBatchApplication {
         environment.streamCreator()
                 .stream("test-super-stream")
                 .superStream()
-                .partitions(3)
-                // .bindingKeys("a", "b", "c")
+                // .partitions(3)
+                .bindingKeys("a", "b", "c")
                 .creator()
                 .create();
 
         Producer producer = environment.producerBuilder()
                 .superStream("test-super-stream")
-                .routing((message) -> {
-                    System.out.println("Routing message with ID: " + message.getProperties().getMessageIdAsString());
-                    return message.getProperties().getMessageIdAsString();
-                }) // routing key = mumurhash(valor) % partitions (0,1 ou 2)
+                .routing(message -> {
+                    int number = message.getProperties().getMessageIdAsString().hashCode();
+                    int rest = Math.abs(number) % 3;
+                    String routingKey = switch (rest) {
+                        case 0 -> "a";
+                        case 1 -> "b";
+                        case 2 -> "c";
+                        default -> "a";
+                    };
+                    System.out.println("Routing message with ID: " + message.getProperties().getMessageIdAsString()
+                            + " to routing key: " + routingKey);
+                    return routingKey;
+                })
+                .key()
+                // .routing((message) -> {
+                // System.out.println("Routing message with ID: " +
+                // message.getProperties().getMessageIdAsString());
+                // return message.getProperties().getMessageIdAsString();
+                // }) // routing key = mumurhash(valor) % partitions (0,1 ou 2)
                 .producerBuilder()
                 .build();
 
