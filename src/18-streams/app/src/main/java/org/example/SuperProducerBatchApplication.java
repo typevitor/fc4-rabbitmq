@@ -3,6 +3,7 @@
  */
 package org.example;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -20,40 +21,47 @@ public class SuperProducerBatchApplication {
         environment.streamCreator()
                 .stream("test-super-stream")
                 .superStream()
-                // .partitions(3)
+                .partitions(3)
                 // .bindingKeys("a", "b", "c")
                 .creator()
                 .create();
 
-        // Producer producer = environment.producerBuilder()
-        // .stream("test-stream")
-        // .build();
+        Producer producer = environment.producerBuilder()
+                .superStream("test-super-stream")
+                .routing((message) -> {
+                    System.out.println("Routing message with ID: " + message.getProperties().getMessageIdAsString());
+                    return message.getProperties().getMessageIdAsString();
+                }) // routing key = mumurhash(valor) % partitions (0,1 ou 2)
+                .producerBuilder()
+                .build();
 
-        // int messageCount = 10;
+        int messageCount = 100;
 
-        // CountDownLatch publishConfirmLatch = new CountDownLatch(1);
+        CountDownLatch publishConfirmLatch = new CountDownLatch(1);
 
-        // IntStream.range(0, messageCount).forEach(i -> {
-        // Message message = producer.messageBuilder()
-        // .addData(("Hello, Sending message " + i + "!!").getBytes())
-        // .build();
+        IntStream.range(0, messageCount).forEach(i -> {
+            Message message = producer.messageBuilder()
+                    .addData(("Hello, Sending message " + i + "!!").getBytes())
+                    .properties().messageId(UUID.randomUUID())
+                    .messageBuilder()
+                    .build();
 
-        // // send message
-        // producer.send(message, confirmStatus -> {
-        // if (confirmStatus.isConfirmed()) {
-        // System.out.println("Message acknowledged by RabbitMQ Stream.");
-        // } else {
-        // System.out.println("Message not acknowledged by RabbitMQ Stream.");
-        // }
+            // // send message
+            producer.send(message, confirmStatus -> {
+                if (confirmStatus.isConfirmed()) {
+                    System.out.println("Message acknowledged by RabbitMQ Stream.");
+                } else {
+                    System.out.println("Message not acknowledged by RabbitMQ Stream.");
+                }
 
-        // publishConfirmLatch.countDown();
-        // });
+                publishConfirmLatch.countDown();
+            });
 
-        // });
+        });
 
-        // publishConfirmLatch.await(10, TimeUnit.SECONDS);
+        publishConfirmLatch.await(10, TimeUnit.SECONDS);
 
-        // producer.close();
+        producer.close();
         environment.close();
 
         System.out.println("Message sent to RabbitMQ Stream!");
