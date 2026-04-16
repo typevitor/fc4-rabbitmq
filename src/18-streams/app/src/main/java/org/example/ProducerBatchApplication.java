@@ -19,6 +19,13 @@ public class ProducerBatchApplication {
         // assert/declaracao da fila
         environment.streamCreator()
                 .stream("test-stream")
+                .argument("max-length-bytes", "100000000") // Define o tamanho áximo da stream
+                .argument("max-age", "7D") // politica de retenção de mensagens, nesse caso 7 dias
+                .argument("initial-cluster-size", "3") // define o tamanho do cluster
+                .argument("queue-leader-locator", "balanced") // define a politica de distribuição de mensagens entre os
+                                                              // nós do cluster
+                .argument("stream-max-segment-size-bytes", "100000000") // define o tamanho máximo de cada segmento da
+                                                                        // stream, nesse caso 100MB, padrão é 512MB
                 .create();
 
         Producer producer = environment.producerBuilder()
